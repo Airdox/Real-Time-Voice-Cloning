@@ -1,29 +1,33 @@
 from encoder.params_data import *
 from encoder.model import SpeakerEncoder
-from encoder.audio import preprocess_wav   # We want to expose this function from here
+from encoder.audio import preprocess_wav  # We want to expose this function from here
 from matplotlib import cm
 from encoder import audio
 from pathlib import Path
+from typing import Optional, Union, List
 import numpy as np
 import torch
+import logging
 
-_model = None # type: SpeakerEncoder
-_device = None # type: torch.device
+# Set up logging
+logger = logging.getLogger(__name__)
+
+_model: Optional[SpeakerEncoder] = None
+_device: Optional[torch.device] = None
 
 
-def load_model(weights_fpath: Path, device=None):
+def load_model(weights_fpath: Path, device: Optional[Union[torch.device, str]] = None) -> None:
     """
-    Loads the model in memory. If this function is not explicitely called, it will be run on the
+    Loads the model in memory. If this function is not explicitly called, it will be run on the
     first call to embed_frames() with the default weights file.
 
     :param weights_fpath: the path to saved model weights.
     :param device: either a torch device or the name of a torch device (e.g. "cpu", "cuda"). The
     model will be loaded and will run on this device. Outputs will however always be on the cpu.
-    If None, will default to your GPU if it"s available, otherwise your CPU.
+    If None, will default to your GPU if it's available, otherwise your CPU.
     """
-    # TODO: I think the slow loading of the encoder might have something to do with the device it
-    #   was saved on. Worth investigating.
     global _model, _device
+
     if device is None:
         _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     elif isinstance(device, str):
@@ -32,7 +36,7 @@ def load_model(weights_fpath: Path, device=None):
     checkpoint = torch.load(weights_fpath, _device)
     _model.load_state_dict(checkpoint["model_state"])
     _model.eval()
-    print("Loaded encoder \"%s\" trained to step %d" % (weights_fpath.name, checkpoint["step"]))
+    print('Loaded encoder "%s" trained to step %d' % (weights_fpath.name, checkpoint["step"]))
 
 
 def is_loaded():
@@ -55,8 +59,9 @@ def embed_frames_batch(frames_batch):
     return embed
 
 
-def compute_partial_slices(n_samples, partial_utterance_n_frames=partials_n_frames,
-                           min_pad_coverage=0.75, overlap=0.5):
+def compute_partial_slices(
+    n_samples, partial_utterance_n_frames=partials_n_frames, min_pad_coverage=0.75, overlap=0.5
+):
     """
     Computes where to split an utterance waveform and its corresponding mel spectrogram to obtain
     partial utterances of <partial_utterance_n_frames> each. Both the waveform and the mel
@@ -160,6 +165,7 @@ def embed_speaker(wavs, **kwargs):
 
 def plot_embedding_as_heatmap(embed, ax=None, title="", shape=None, color_range=(0, 0.30)):
     import matplotlib.pyplot as plt
+
     if ax is None:
         ax = plt.gca()
 
