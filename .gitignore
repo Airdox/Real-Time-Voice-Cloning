@@ -18,3 +18,33 @@
 encoder/saved_models/*
 synthesizer/saved_models/*
 vocoder/saved_models/*
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Model files
+saved_models/
+*.pt
+*.pth
+
+# Temporary files
+requirements_original.txt
